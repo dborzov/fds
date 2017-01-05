@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -12,7 +13,7 @@ var secs int64
 func loadfile(filename string) []byte {
 	dat, err := ioutil.ReadFile(filename)
 	if err != nil {
-		fmt.Println("cant read the file")
+		fmt.Printf("cant read the file: %v\n", err)
 		os.Exit(1)
 	}
 	return dat
@@ -20,7 +21,7 @@ func loadfile(filename string) []byte {
 
 func diff(org, current []byte) (bool, []byte) {
 	res := make([]byte, len(current))
-	changed := false
+	changed := len(current) != len(org)
 	for i := range current {
 		if i < len(org) && current[i] == org[i] {
 			res[i] = '-'
@@ -32,16 +33,20 @@ func diff(org, current []byte) (bool, []byte) {
 	return changed, res
 }
 
+func print(s []byte) string {
+	return strings.Replace(string(s), "\n", "\\n", -1)
+}
+
 func main() {
 	secs = time.Now().Unix()
 	prev := loadfile(os.Args[1])
-	fmt.Printf("[%5d]%v", 0, string(prev))
+	fmt.Printf("[%5d] ◤%v◢\n", 0, print(prev))
 	for {
 		cur := loadfile(os.Args[1])
 		changed, diffs := diff(prev, cur)
 		if changed {
 			prev = cur
-			fmt.Printf("[%5d]%v\n", time.Now().Unix()-secs, string(diffs))
+			fmt.Printf("[%5d]◤%v◢\n", time.Now().Unix()-secs, print(diffs))
 		}
 	}
 }
